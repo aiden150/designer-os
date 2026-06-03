@@ -1,59 +1,74 @@
 #!/usr/bin/env node
 /**
- * Designer OS — Hook: check-completeness
+ * check-completeness — PostToolUse hook
  *
- * Fires on PostToolUse (Write) when a new component file is created.
- * Warns when a component in components/ is created without a sibling
- * story (.stories.tsx) or test (.test.tsx / .spec.tsx) file.
+ * Fires after Write/Edit on a component file in components/**.
+ * Warns (does NOT block) if a sibling .stories.tsx or .test.tsx is missing,
+ * but ONLY if at least one other component in the same folder already has a story or test.
  *
- * This is advisory — it does not block saves.
+ * This is a progressive adoption check — it doesn't demand stories/tests everywhere,
+ * just keeps a folder consistent once the convention starts.
  */
 
-import { existsSync } from "fs"
-import { resolve, dirname, basename, extname } from "path"
+import { readFileSync, readdirSync, existsSync } from "node:fs";
+import path from "node:path";
 
-let input = ""
-process.stdin.on("data", (chunk) => (input += chunk))
-process.stdin.on("end", () => {
-  try {
-    main(JSON.parse(input))
-  } catch {}
-})
+const stdin = readFileSync(0, "utf8");
+let payload;
+try { payload = JSON.parse(stdin); } catch { process.exit(0); }
 
-function main(toolInput) {
-  // Only care about Write (new file creation), not Edit
-  const toolName = toolInput?.tool_name || ""
-  if (toolName !== "Write") return
+const filePath = payload?.tool_input?.file_path || payload?.tool_input?.path;
+if (!filePath) process.exit(0);
 
-  const filePath = toolInput?.tool_input?.file_path || ""
+const abs = path.resolve(filePath);
 
-  // Only check files in components/ (not components/ui/ — those are Shadcn primitives)
-  if (!filePath.includes("/components/")) return
-  if (filePath.includes("/components/ui/")) return
-  if (!filePath.match(/\.(tsx|ts)$/)) return
+// Only check components/**/*.tsx (skip ui/ Shadcn primitives — they're third-party)
+if (!abs.includes("/components/")) process.exit(0);
+if (abs.includes("/components/ui/")) process.exit(0);
+if (!abs.endsWith(".tsx")) process.exit(0);
 
-  const dir = dirname(filePath)
-  const name = basename(filePath, extname(filePath))
-
-  const storyPath = resolve(dir, `${name}.stories.tsx`)
-  const testPath1 = resolve(dir, `${name}.test.tsx`)
-  const testPath2 = resolve(dir, `${name}.spec.tsx`)
-  const testPath3 = resolve(dir, `__tests__/${name}.test.tsx`)
-
-  const hasStory = existsSync(storyPath)
-  const hasTest = existsSync(testPath1) || existsSync(testPath2) || existsSync(testPath3)
-
-  if (hasStory && hasTest) return
-
-  const missing = []
-  if (!hasStory) missing.push(`${name}.stories.tsx`)
-  if (!hasTest) missing.push(`${name}.test.tsx`)
-
-  const msg = [
-    `💡 [completeness] New component ${basename(filePath)} has no ${missing.join(" or ")}.`,
-    `  Consider adding tests or stories to make this component verifiable by the QA harness.`,
-    `  (This is advisory — not blocking.)`,
-  ].join("\n")
-
-  console.log(JSON.stringify({ additionalContext: msg }))
+// Skip stories and tests themselves
+const base = path.basename(abs);
+if (base.endsWith(".stories.tsx") || base.endsWith(".test.tsx") || base.endsWith(".spec.tsx")) {
+  process.exit(0);
 }
+
+const dir = path.dirname(abs);
+const stem = base.replace(/\.tsx$/, "");
+
+// Check if THIS component already has a story / test
+const hasOwnStory = existsSync(path.join(dir, `${stem}.stories.tsx`));
+const hasOwnTest  = existsSync(path.join(dir, `${stem}.test.tsx`)) || existsSync(path.join(dir, `${stem}.spec.tsx`));
+
+if (hasOwnStory && hasOwnTest) process.exit(0);
+
+// Check if ANY component in this folder has a story or test (progressive adoption)
+let folderHasStories = false;
+let folderHasTests = false;
+try {
+  const entries = readdirSync(dir);
+  folderHasStories = entries.some((f) => f.endsWith(".stories.tsx"));
+  folderHasTests   = entries.some((f) => f.endsWith(".test.tsx") || f.endsWith(".spec.tsx"));
+} catch {
+  process.exit(0);
+}
+
+// Only warn if folder convention exists for the missing artifact
+const missing = [];
+if (folderHasStories && !hasOwnStory) missing.push(`${stem}.stories.tsx`);
+if (folderHasTests   && !hasOwnTest)  missing.push(`${stem}.test.tsx`);
+
+if (missing.length === 0) process.exit(0);
+
+const rel = path.relative(process.cwd(), abs);
+const summary = `[completeness] ${rel} is missing sibling artifact${missing.length > 1 ? "s" : ""} ` +
+  `(other components in this folder have ${folderHasStories ? "stories" : ""}${folderHasStories && folderHasTests ? " + " : ""}${folderHasTests ? "tests" : ""}):\n` +
+  missing.map((m) => `  - ${m}`).join("\n");
+
+process.stdout.write(JSON.stringify({
+  hookSpecificOutput: {
+    hookEventName: "PostToolUse",
+    additionalContext: summary,
+  },
+}));
+process.exit(0);

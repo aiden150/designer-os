@@ -1,141 +1,139 @@
 #!/usr/bin/env node
 /**
- * Designer OS — Hook: check-design-tokens
+ * check-design-tokens — PostToolUse hook
  *
- * Fires on PostToolUse (Write, Edit) for .tsx and .ts files.
- * Warns when hardcoded hex colors or raw rgb/hsl values are written
- * to component files outside of globals.css.
+ * Fires after Write/Edit on .tsx/.ts/.css files.
+ * Scans the saved file for:
+ *   - Raw hex colors (#abc, #aabbcc, #aabbccdd)
+ *   - rgb()/rgba()/hsl()/hsla() literals
+ *   - Tailwind arbitrary color values (bg-[#…], text-[#…])
+ *   - Tailwind default color utilities (bg-blue-500, text-red-600, …) outside our scales
  *
- * Output format expected by Claude Code:
- *   { "additionalContext": "<message>" }  — warning (non-blocking)
- *   (no output) — all clear
+ * Honors the exceptions list in /AGENTS.md.
+ *
+ * Input  (stdin JSON): { tool_input: { file_path: "..." }, ... }
+ * Output (stdout JSON): { additionalContext?: "..." }  on warning, empty on pass
  */
 
-import { readFileSync } from "fs"
-import { resolve, relative } from "path"
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
-// ─── Read the tool input from stdin ───────────────────────────────────────────
-let input = ""
-process.stdin.on("data", (chunk) => (input += chunk))
-process.stdin.on("end", () => {
-  try {
-    main(JSON.parse(input))
-  } catch {
-    // If we can't parse, do nothing — don't block the tool
-  }
-})
+// ──────────────── Read stdin ────────────────
+const stdin = readFileSync(0, "utf8");
+let payload;
+try { payload = JSON.parse(stdin); } catch { process.exit(0); }
 
-// ─── Exceptions ───────────────────────────────────────────────────────────────
-const ALLOWED_FILES = [
+const filePath = payload?.tool_input?.file_path || payload?.tool_input?.path;
+if (!filePath) process.exit(0);
+
+const abs = path.resolve(filePath);
+
+// ──────────────── Scope check ────────────────
+const EXEMPT_DIRS = ["node_modules", ".next", "screenshots", "public", "scripts", "docs", ".claude", ".github"];
+const EXEMPT_FILES = [
   "globals.css",
   "tailwind.config.ts",
   "tailwind.config.js",
-]
+];
 
-const ALLOWED_PATTERNS = [
-  // Motion timing
-  /\b0\.\d+s\b/,
-  // Pure comments
-  /^\s*\/\//,
-  /^\s*\*/,
-]
+if (EXEMPT_DIRS.some((d) => abs.includes(`/${d}/`))) process.exit(0);
+if (EXEMPT_FILES.some((f) => abs.endsWith(`/${f}`))) process.exit(0);
 
-// ─── Detection patterns ───────────────────────────────────────────────────────
-const CHECKS = [
-  {
-    pattern: /#[0-9a-fA-F]{3,6}\b/g,
-    rule: "hardcoded-color",
-    severity: "error",
-    message: (match, file, line) =>
-      `[design-tokens] Hardcoded color ${match} at ${file}:${line}. Use var(--color-*) or a semantic token instead.`,
-  },
-  {
-    pattern: /\brgb\s*\(/g,
-    rule: "raw-rgb",
-    severity: "error",
-    message: (match, file, line) =>
-      `[design-tokens] Raw rgb() at ${file}:${line}. Use var(--color-*) instead.`,
-  },
-  {
-    pattern: /\bhsl\s*\(/g,
-    rule: "raw-hsl",
-    severity: "error",
-    message: (match, file, line) =>
-      `[design-tokens] Raw hsl() at ${file}:${line}. Use var(--color-*) instead.`,
-  },
-  {
-    pattern:
-      /\b(text|bg|border|ring|fill|stroke)-(red|blue|green|yellow|purple|pink|indigo|orange|teal|cyan|violet|fuchsia|rose|sky|emerald|lime|amber)-\d{2,3}\b/g,
-    rule: "tailwind-default-color",
-    severity: "warning",
-    message: (match, file, line) =>
-      `[design-tokens] Default Tailwind color class "${match}" at ${file}:${line}. Use the project's mapped color tokens instead.`,
-  },
-]
+const ext = path.extname(abs).toLowerCase();
+if (![".tsx", ".ts", ".jsx", ".js", ".css"].includes(ext)) process.exit(0);
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
-function main(toolInput) {
-  // Only care about Write and Edit tools on .tsx/.ts files
-  const toolName = toolInput?.tool_name || ""
-  if (!["Write", "Edit"].includes(toolName)) return
+// ──────────────── Read file ────────────────
+let src;
+try { src = readFileSync(abs, "utf8"); } catch { process.exit(0); }
 
-  const filePath = toolInput?.tool_input?.file_path || ""
-  if (!filePath.match(/\.(tsx?|jsx?)$/)) return
+const lines = src.split("\n");
+const findings = [];
 
-  // Skip allowed files
-  const fileName = filePath.split("/").pop()
-  if (ALLOWED_FILES.some((f) => fileName === f)) return
+// ──────────────── Patterns ────────────────
+const HEX = /#[0-9a-fA-F]{3,8}\b/g;
+const RGB = /\b(rgba?|hsla?)\s*\(/g;
+const TW_ARB_COLOR = /(?:bg|text|border|fill|stroke|ring|shadow|from|via|to|outline|accent|caret|decoration|divide|placeholder)-\[#[0-9a-fA-F]{3,8}(?:\/[0-9.]+)?\]/g;
+// Tailwind default palettes we never use directly:
+const TW_DEFAULT = /\b(?:bg|text|border|fill|stroke|ring|from|via|to|outline|accent|divide|placeholder)-(?:slate|zinc|neutral|stone|orange|yellow|lime|emerald|teal|cyan|sky|indigo|violet|purple|fuchsia|pink|rose)-(?:50|100|200|300|400|500|600|700|800|900|950)\b/g;
+// Note: the project may have its own primitive scales (--primary-*, --gray-*, etc.).
+// We flag Tailwind's default palette utilities — use var(--color-*) semantic tokens instead.
 
-  // Skip docs and scripts
-  if (filePath.includes("/docs/") || filePath.includes("/scripts/")) return
-
-  // Read the file
-  let content
-  try {
-    content = readFileSync(resolve(filePath), "utf8")
-  } catch {
-    return // Can't read — don't block
-  }
-
-  const lines = content.split("\n")
-  const findings = []
-
-  for (const check of CHECKS) {
-    lines.forEach((line, idx) => {
-      // Skip lines that are in allowed patterns (comments, etc.)
-      if (ALLOWED_PATTERNS.some((p) => p.test(line))) return
-
-      let match
-      const regex = new RegExp(check.pattern.source, check.pattern.flags)
-      while ((match = regex.exec(line)) !== null) {
-        findings.push({
-          rule: check.rule,
-          severity: check.severity,
-          text: check.message(match[0], relative(process.cwd(), filePath), idx + 1),
-        })
-      }
-    })
-  }
-
-  if (findings.length === 0) return
-
-  const errors = findings.filter((f) => f.severity === "error")
-  const warnings = findings.filter((f) => f.severity === "warning")
-
-  const lines_out = []
-  if (errors.length > 0) {
-    lines_out.push(`⚠️  Design token violations found (${errors.length} error${errors.length > 1 ? "s" : ""}, ${warnings.length} warning${warnings.length !== 1 ? "s" : ""}):`)
-  } else {
-    lines_out.push(`💡 Design token suggestions (${warnings.length} warning${warnings.length !== 1 ? "s" : ""}):`)
-  }
-
-  for (const f of [...errors, ...warnings].slice(0, 10)) {
-    lines_out.push(`  • ${f.text}`)
-  }
-
-  if (findings.length > 10) {
-    lines_out.push(`  … and ${findings.length - 10} more. Run /agents code-scanner for the full list.`)
-  }
-
-  console.log(JSON.stringify({ additionalContext: lines_out.join("\n") }))
+// ──────────────── Line filters ────────────────
+function isInComment(line) {
+  const t = line.trim();
+  return t.startsWith("//") || t.startsWith("*") || t.startsWith("/*");
 }
+function isInStringContent(line, idx) {
+  // crude: if the match is inside a quoted URL or content string, skip
+  const slice = line.slice(0, idx);
+  const quoteCount = (slice.match(/(?<!\\)["'`]/g) || []).length;
+  return quoteCount % 2 === 1 && /https?:\/\/|data:image|^[^"']*alt=/.test(line);
+}
+
+// ──────────────── Scan ────────────────
+lines.forEach((line, i) => {
+  if (isInComment(line)) return;
+
+  // Hex
+  let m;
+  HEX.lastIndex = 0;
+  while ((m = HEX.exec(line)) !== null) {
+    if (isInStringContent(line, m.index)) continue;
+    findings.push({
+      line: i + 1,
+      rule: "no-hardcoded-color",
+      matched: m[0],
+      suggest: "Use var(--color-*) (semantic) or var(--primary-*|deep-*|gray-*) primitive token",
+    });
+  }
+
+  // rgb/hsl
+  RGB.lastIndex = 0;
+  while ((m = RGB.exec(line)) !== null) {
+    if (isInStringContent(line, m.index)) continue;
+    findings.push({
+      line: i + 1,
+      rule: "no-hardcoded-color",
+      matched: line.slice(m.index, Math.min(line.length, m.index + 40)),
+      suggest: "Replace with a CSS variable (semantic or primitive token)",
+    });
+  }
+
+  // Arbitrary Tailwind color
+  TW_ARB_COLOR.lastIndex = 0;
+  while ((m = TW_ARB_COLOR.exec(line)) !== null) {
+    findings.push({
+      line: i + 1,
+      rule: "no-arbitrary-tailwind-color",
+      matched: m[0],
+      suggest: "Use bg-[var(--color-bg-*)] or a semantic utility class",
+    });
+  }
+
+  // Tailwind default palettes (non-Mentix)
+  TW_DEFAULT.lastIndex = 0;
+  while ((m = TW_DEFAULT.exec(line)) !== null) {
+    findings.push({
+      line: i + 1,
+      rule: "no-tailwind-default-color",
+      matched: m[0],
+      suggest: "This project uses custom primitive scales. Use var(--color-*) semantic tokens instead.",
+    });
+  }
+});
+
+// ──────────────── Output ────────────────
+if (findings.length === 0) process.exit(0);
+
+const rel = path.relative(process.cwd(), abs);
+const summary = `[design-tokens] ${findings.length} potential violation${findings.length > 1 ? "s" : ""} in ${rel}:\n` +
+  findings.slice(0, 5).map((f) => `  L${f.line}  ${f.rule}: \`${f.matched}\` → ${f.suggest}`).join("\n") +
+  (findings.length > 5 ? `\n  …and ${findings.length - 5} more` : "");
+
+process.stdout.write(JSON.stringify({
+  hookSpecificOutput: {
+    hookEventName: "PostToolUse",
+    additionalContext: summary,
+  },
+}));
+process.exit(0);

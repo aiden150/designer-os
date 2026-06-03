@@ -1,99 +1,91 @@
 #!/usr/bin/env node
 /**
- * Designer OS — Hook: check-spacing
+ * check-spacing — PostToolUse hook
  *
- * Fires on PostToolUse (Write, Edit) for .tsx and .ts files.
- * Warns when raw pixel values are written outside globals.css.
+ * Fires after Write/Edit on .tsx/.ts files.
+ * Scans for:
+ *   - Tailwind arbitrary spacing (p-[17px], m-[23px], gap-[10px], w-[123px], top-[7px], etc.)
+ *   - Inline style with raw px values (padding: "17px", margin: "23px")
+ *
+ * Skips legitimate cases (aspect ratios, z-index, etc.).
  */
 
-import { readFileSync } from "fs"
-import { resolve, relative } from "path"
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
-let input = ""
-process.stdin.on("data", (chunk) => (input += chunk))
-process.stdin.on("end", () => {
-  try {
-    main(JSON.parse(input))
-  } catch {}
-})
+const stdin = readFileSync(0, "utf8");
+let payload;
+try { payload = JSON.parse(stdin); } catch { process.exit(0); }
 
-const ALLOWED_FILES = [
-  "globals.css",
-  "tailwind.config.ts",
-  "tailwind.config.js",
-]
+const filePath = payload?.tool_input?.file_path || payload?.tool_input?.path;
+if (!filePath) process.exit(0);
 
-// Raw px is allowed in these contexts
-const PX_EXCEPTIONS = [
-  // Zero pixel
-  /\b0px\b/,
-  // Comments
-  /^\s*\/\//,
-  /^\s*\*/,
-  // SVG attributes (strokeWidth, width, height as numbers are fine)
-  /strokeWidth=/,
-  // Playwright / test files
-  /\.spec\./,
-  /\.test\./,
-]
+const abs = path.resolve(filePath);
 
-function main(toolInput) {
-  const toolName = toolInput?.tool_name || ""
-  if (!["Write", "Edit"].includes(toolName)) return
+const EXEMPT_DIRS = ["node_modules", ".next", "screenshots", "public", "scripts", "docs", ".claude", ".github"];
+const EXEMPT_FILES = ["globals.css"];
 
-  const filePath = toolInput?.tool_input?.file_path || ""
-  if (!filePath.match(/\.(tsx?|jsx?)$/)) return
+if (EXEMPT_DIRS.some((d) => abs.includes(`/${d}/`))) process.exit(0);
+if (EXEMPT_FILES.some((f) => abs.endsWith(`/${f}`))) process.exit(0);
 
-  const fileName = filePath.split("/").pop()
-  if (ALLOWED_FILES.some((f) => fileName === f)) return
-  if (filePath.includes("/docs/") || filePath.includes("/scripts/")) return
+const ext = path.extname(abs).toLowerCase();
+if (![".tsx", ".ts", ".jsx", ".js"].includes(ext)) process.exit(0);
 
-  let content
-  try {
-    content = readFileSync(resolve(filePath), "utf8")
-  } catch {
-    return
-  }
+let src;
+try { src = readFileSync(abs, "utf8"); } catch { process.exit(0); }
 
-  const lines = content.split("\n")
-  const findings = []
+const lines = src.split("\n");
+const findings = [];
 
-  // Pattern: raw pixel value in inline styles or string literals
-  // e.g. padding: "17px", gap: "24px", style={{ height: "200px" }}
-  const PX_PATTERN = /:\s*["']?\d+px["']?/g
+// Tailwind arbitrary spacing utilities
+const TW_ARB_SPACE = /\b(p|pt|pr|pb|pl|px|py|m|mt|mr|mb|ml|mx|my|gap|gap-x|gap-y|w|h|min-w|min-h|max-w|max-h|top|right|bottom|left|inset|space-x|space-y|translate-x|translate-y)-\[(\d+(?:\.\d+)?)(px|rem|em)\]/g;
 
-  lines.forEach((line, idx) => {
-    if (PX_EXCEPTIONS.some((p) => p.test(line))) return
+// Inline style with raw px (padding, margin, width, height, gap, top, …)
+const INLINE_PX = /(padding|margin|width|height|gap|top|right|bottom|left|borderRadius|fontSize|lineHeight|columnGap|rowGap)\s*:\s*["']?(\d+(?:\.\d+)?)px["']?/g;
 
-    let match
-    const regex = new RegExp(PX_PATTERN.source, PX_PATTERN.flags)
-    while ((match = regex.exec(line)) !== null) {
-      // Skip "0px"
-      if (match[0].includes("0px")) continue
-
-      findings.push({
-        line: idx + 1,
-        text: match[0].trim(),
-      })
-    }
-  })
-
-  if (findings.length === 0) return
-
-  const relPath = relative(process.cwd(), filePath)
-  const lines_out = [
-    `💡 [spacing] Raw pixel values found in ${relPath}. Use Tailwind spacing utilities instead:`,
-  ]
-
-  for (const f of findings.slice(0, 8)) {
-    lines_out.push(
-      `  • Line ${f.line}: ${f.text}  →  use p-4 / gap-6 / h-48 (Tailwind) or a CSS variable`
-    )
-  }
-
-  if (findings.length > 8) {
-    lines_out.push(`  … and ${findings.length - 8} more.`)
-  }
-
-  console.log(JSON.stringify({ additionalContext: lines_out.join("\n") }))
+function isInComment(line) {
+  const t = line.trim();
+  return t.startsWith("//") || t.startsWith("*") || t.startsWith("/*");
 }
+
+lines.forEach((line, i) => {
+  if (isInComment(line)) return;
+
+  let m;
+  TW_ARB_SPACE.lastIndex = 0;
+  while ((m = TW_ARB_SPACE.exec(line)) !== null) {
+    findings.push({
+      line: i + 1,
+      rule: "no-arbitrary-tailwind-spacing",
+      matched: m[0],
+      suggest: `Use the Tailwind scale (${m[1]}-1 through ${m[1]}-32) instead of arbitrary ${m[2]}${m[3]}`,
+    });
+  }
+
+  INLINE_PX.lastIndex = 0;
+  while ((m = INLINE_PX.exec(line)) !== null) {
+    // Skip 0px (always fine) and 1px (commonly intentional for borders/dividers)
+    if (m[2] === "0" || m[2] === "1") continue;
+    findings.push({
+      line: i + 1,
+      rule: "no-inline-px-spacing",
+      matched: `${m[1]}: ${m[2]}px`,
+      suggest: `Use a Tailwind class (e.g., p-4, gap-3) instead of inline ${m[2]}px`,
+    });
+  }
+});
+
+if (findings.length === 0) process.exit(0);
+
+const rel = path.relative(process.cwd(), abs);
+const summary = `[spacing] ${findings.length} hardcoded spacing value${findings.length > 1 ? "s" : ""} in ${rel}:\n` +
+  findings.slice(0, 5).map((f) => `  L${f.line}  ${f.rule}: \`${f.matched}\` → ${f.suggest}`).join("\n") +
+  (findings.length > 5 ? `\n  …and ${findings.length - 5} more` : "");
+
+process.stdout.write(JSON.stringify({
+  hookSpecificOutput: {
+    hookEventName: "PostToolUse",
+    additionalContext: summary,
+  },
+}));
+process.exit(0);

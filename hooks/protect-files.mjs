@@ -1,72 +1,53 @@
 #!/usr/bin/env node
 /**
- * Designer OS — Hook: protect-files
+ * protect-files — PreToolUse hook
  *
- * Fires on PreToolUse (Write, Edit, Delete).
- * HARD BLOCKS writes to sensitive or generated files.
+ * Blocks Write/Edit on protected files:
+ *   - .env, .env.*  (secrets)
+ *   - package-lock.json, yarn.lock, pnpm-lock.yaml  (lockfiles — managed by package manager)
+ *   - *_generated.css  (build output)
+ *   - .vercel/**, node_modules/**, .next/**  (tool-managed)
  *
- * Output format for blocking:
- *   { "decision": "block", "reason": "<message>" }
- *
- * Output for allowing:
- *   (no output / exit 0)
+ * Outputs `permissionDecision: "deny"` to block, with explanation.
+ * Read access is NOT blocked (handled by settings.json deny list separately).
  */
 
-let input = ""
-process.stdin.on("data", (chunk) => (input += chunk))
-process.stdin.on("end", () => {
-  try {
-    main(JSON.parse(input))
-  } catch {
-    // Parse failure — don't block
-    process.exit(0)
-  }
-})
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
-const BLOCKED_PATTERNS = [
-  {
-    pattern: /\.env(\.[a-z]+)?$/,
-    reason:
-      "[protect-files] Writes to .env files are blocked. Environment secrets must be managed via the Vercel dashboard or your secrets manager — never committed to the repo.",
-  },
-  {
-    pattern: /package-lock\.json$/,
-    reason:
-      "[protect-files] Writes to package-lock.json are blocked. This file is managed by npm automatically. Run 'npm install' to update it.",
-  },
-  {
-    pattern: /_generated\.css$/,
-    reason:
-      "[protect-files] Writes to generated CSS files are blocked. These are build artifacts — edit the source tokens in globals.css instead.",
-  },
-  {
-    pattern: /node_modules\//,
-    reason:
-      "[protect-files] Writes inside node_modules/ are blocked. Install packages via npm instead.",
-  },
-  {
-    pattern: /\.next\//,
-    reason:
-      "[protect-files] Writes inside .next/ are blocked. This is a build output directory — it is regenerated on every build.",
-  },
-]
+const stdin = readFileSync(0, "utf8");
+let payload;
+try { payload = JSON.parse(stdin); } catch { process.exit(0); }
 
-function main(toolInput) {
-  const toolName = toolInput?.tool_name || ""
-  if (!["Write", "Edit", "Delete"].includes(toolName)) return
+const filePath = payload?.tool_input?.file_path || payload?.tool_input?.path;
+if (!filePath) process.exit(0);
 
-  const filePath =
-    toolInput?.tool_input?.file_path ||
-    toolInput?.tool_input?.path ||
-    ""
+const abs = path.resolve(filePath);
+const base = path.basename(abs);
+const rel = path.relative(process.cwd(), abs);
 
-  for (const { pattern, reason } of BLOCKED_PATTERNS) {
-    if (pattern.test(filePath)) {
-      console.log(JSON.stringify({ decision: "block", reason }))
-      process.exit(0)
-    }
-  }
+// ──────────────── Patterns ────────────────
+const BLOCKED = [
+  { match: /(^|\/)\.env(\..*)?$/, reason: "Environment file — contains secrets. Edit via your password manager or .env.local (untracked)." },
+  { match: /(^|\/)package-lock\.json$/, reason: "Lockfile — managed by npm. Run `npm install` instead of editing directly." },
+  { match: /(^|\/)yarn\.lock$/, reason: "Lockfile — managed by yarn. Run `yarn install` instead of editing directly." },
+  { match: /(^|\/)pnpm-lock\.yaml$/, reason: "Lockfile — managed by pnpm. Run `pnpm install` instead of editing directly." },
+  { match: /_generated\.css$/, reason: "Generated CSS — produced by the build. Edit the source it's generated from instead." },
+  { match: /(^|\/)\.vercel\//, reason: ".vercel/ is managed by Vercel CLI." },
+  { match: /(^|\/)node_modules\//, reason: "node_modules/ is managed by your package manager." },
+  { match: /(^|\/)\.next\//, reason: ".next/ is Next.js build output." },
+];
 
-  // Allow
-  process.exit(0)
-}
+const hit = BLOCKED.find(({ match }) => match.test(abs) || match.test(rel) || match.test(base));
+
+if (!hit) process.exit(0);
+
+// Block with explanation
+process.stdout.write(JSON.stringify({
+  hookSpecificOutput: {
+    hookEventName: "PreToolUse",
+    permissionDecision: "deny",
+    permissionDecisionReason: `[protect-files] ${rel} is a protected file. ${hit.reason}`,
+  },
+}));
+process.exit(0);
