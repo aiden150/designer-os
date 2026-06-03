@@ -1,0 +1,192 @@
+# Designer OS — Brand Book Schema (v1.0)
+#
+# This is the JSON Schema (in YAML form) that every brand book must validate against.
+# The `design-from-brand` skill loads this schema, validates the user's input,
+# and refuses to proceed if required fields are missing.
+#
+# Use `brand-book.template.yml` as a starting point.
+# See `brand-book.example.yml` for a fully filled-in version.
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "designer-os/brand-book"
+title: "Designer OS Brand Book"
+type: object
+required: [brand, palette, typography, voice, product]
+additionalProperties: false
+
+properties:
+
+  # ─────────────────────────────────────────────────────────
+  # BRAND IDENTITY
+  # ─────────────────────────────────────────────────────────
+  brand:
+    type: object
+    required: [name, tagline, description]
+    additionalProperties: false
+    properties:
+      name:        { type: string, description: "Brand name. Used throughout the codebase." }
+      tagline:     { type: string, description: "One-line tagline. Shown in hero, footer." }
+      description: { type: string, description: "1-2 sentence company description." }
+      mission:     { type: string, description: "Mission statement (optional)." }
+      domain:      { type: string, description: "Live domain, e.g. acme.com (optional)." }
+      logo:
+        type: object
+        properties:
+          svg:  { type: string, description: "Path to SVG logo (optional)." }
+          png:  { type: string, description: "Path to PNG logo (optional)." }
+          mark: { type: string, description: "Single-character or unicode glyph used as a textual mark." }
+
+  # ─────────────────────────────────────────────────────────
+  # COLOR PALETTE
+  # The plugin derives 11-stop scales from `primary` and `deep`.
+  # All other semantic colors are computed from those two anchors.
+  # ─────────────────────────────────────────────────────────
+  palette:
+    type: object
+    required: [primary, deep]
+    additionalProperties: false
+    properties:
+      primary:
+        type: string
+        pattern: "^#[0-9a-fA-F]{6}$"
+        description: "Brand accent color. Used for CTAs, links, brand fills. Becomes --primary-500."
+      deep:
+        type: string
+        pattern: "^#[0-9a-fA-F]{6}$"
+        description: "Deep/dark brand color. Used for hero backgrounds, footers, primary text. Becomes --deep-900."
+      success: { type: string, pattern: "^#[0-9a-fA-F]{6}$", default: "#10b981", description: "Success/positive status (optional, defaults to green)." }
+      warning: { type: string, pattern: "^#[0-9a-fA-F]{6}$", default: "#f59e0b", description: "Warning status (optional, defaults to amber)." }
+      error:   { type: string, pattern: "^#[0-9a-fA-F]{6}$", default: "#ef4444", description: "Error/destructive status (optional, defaults to red)." }
+      info:    { type: string, pattern: "^#[0-9a-fA-F]{6}$", default: "#3b82f6", description: "Informational status (optional, defaults to blue)." }
+      gray_tint:
+        type: string
+        enum: [cool, warm, neutral]
+        default: neutral
+        description: "Gray scale temperature. 'cool' tints gray toward blue, 'warm' toward beige, 'neutral' is true gray."
+
+  # ─────────────────────────────────────────────────────────
+  # TYPOGRAPHY
+  # ─────────────────────────────────────────────────────────
+  typography:
+    type: object
+    required: [body]
+    additionalProperties: false
+    properties:
+      body:
+        type: string
+        description: "Body font. Must be available on Google Fonts or system."
+        examples: ["Inter", "Geist", "Source Sans 3"]
+      display:
+        type: string
+        description: "Display/heading font. Defaults to `body` if omitted."
+        examples: ["Georgia", "Inter", "Playfair Display"]
+      mono:
+        type: string
+        default: "JetBrains Mono"
+        description: "Monospace font for code/data."
+      scale:
+        type: string
+        enum: [compact, default, generous]
+        default: default
+        description: "Fluid type scale density. 'compact' for dense UIs, 'generous' for marketing-heavy."
+      letter_spacing_headings:
+        type: string
+        enum: [tight, default, loose]
+        default: tight
+        description: "Heading tracking. 'tight' (-0.03em) for institutional feel, 'loose' for friendly."
+
+  # ─────────────────────────────────────────────────────────
+  # VOICE & TONE
+  # Used by the agent when writing UI copy.
+  # ─────────────────────────────────────────────────────────
+  voice:
+    type: object
+    required: [audience, tone]
+    additionalProperties: false
+    properties:
+      audience:
+        type: string
+        description: "Primary audience. Influences register and vocabulary."
+        examples: ["Institutional investors", "Trainee surgeons", "Marketing managers", "Developers"]
+      tone:
+        type: array
+        minItems: 1
+        items:
+          type: string
+          enum: [confident, technical, calm, friendly, playful, urgent, formal, casual, premium, approachable]
+        description: "Pick 2-4 tone descriptors."
+      voice_of:
+        type: string
+        description: "Optional persona reference. e.g. 'Bloomberg Terminal' or 'Stripe docs'."
+      forbid:
+        type: array
+        items: { type: string }
+        description: "Phrases, punctuation, or styles to never use. e.g. ['exclamation points', 'we believe…', emoji]."
+      examples:
+        type: object
+        properties:
+          good: { type: array, items: { type: string }, description: "On-brand sentence examples." }
+          bad:  { type: array, items: { type: string }, description: "Off-brand sentences to avoid." }
+
+  # ─────────────────────────────────────────────────────────
+  # PRODUCT SHAPE
+  # Tells the agent what to scaffold.
+  # ─────────────────────────────────────────────────────────
+  product:
+    type: object
+    required: [type, surfaces]
+    additionalProperties: false
+    properties:
+      type:
+        type: string
+        enum: [b2b-saas, marketplace, consumer-app, content-site, internal-tool, dashboard]
+        description: "Product archetype. Determines default IA + shells to scaffold."
+      surfaces:
+        type: array
+        minItems: 1
+        items:
+          type: string
+          enum: [marketing, auth, onboarding, product-app, admin, docs, blog, status-page]
+        description: "Which surfaces to scaffold. The agent generates routes + shells for each."
+      roles:
+        type: array
+        items: { type: string }
+        description: "User roles (optional). e.g. ['customer', 'admin'] or ['investor', 'developer', 'advisor']. Determines portal shells."
+      key_routes:
+        type: array
+        items:
+          type: object
+          required: [path, name, description]
+          properties:
+            path:        { type: string, description: "URL path, e.g. /pricing" }
+            name:        { type: string, description: "Page name in nav" }
+            description: { type: string, description: "1-line purpose" }
+            shell:
+              type: string
+              enum: [site, app, auth]
+              default: site
+              description: "Which shell wraps this route."
+
+  # ─────────────────────────────────────────────────────────
+  # DEPLOYMENT
+  # ─────────────────────────────────────────────────────────
+  deploy:
+    type: object
+    additionalProperties: false
+    properties:
+      vercel_project: { type: string, description: "Vercel project slug (optional)." }
+      domain:         { type: string, description: "Production domain (optional)." }
+
+  # ─────────────────────────────────────────────────────────
+  # REFERENCES
+  # Sites/products the brand wants to feel like.
+  # ─────────────────────────────────────────────────────────
+  references:
+    type: array
+    items:
+      type: object
+      required: [url, why]
+      properties:
+        url: { type: string, format: uri }
+        why: { type: string, description: "What to borrow — IA, tone, hero style, etc." }
+    description: "Sites whose patterns the agent should study before scaffolding."

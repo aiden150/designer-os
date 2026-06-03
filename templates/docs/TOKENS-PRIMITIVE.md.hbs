@@ -1,0 +1,94 @@
+# Primitive Tokens — {{brand.name}}
+
+> Raw color scales derived from the brand's two anchor colors. **Never reference these directly in component code** — use semantic tokens instead.
+
+---
+
+## Primary scale
+
+Derived from `{{palette.primary}}` (brand accent).
+
+| Token | Value | Usage |
+|---|---|---|
+| `--primary-50` | *(computed)* | Tinted backgrounds, hover states on white |
+| `--primary-100` | *(computed)* | Subtle tinted surfaces |
+| `--primary-200` | *(computed)* | Light fills, decorative borders |
+| `--primary-300` | *(computed)* | Disabled states, placeholder fills |
+| `--primary-400` | *(computed)* | Secondary brand elements |
+| `--primary-500` | `{{palette.primary}}` | Base brand color |
+| `--primary-600` | *(computed)* | CTAs, interactive elements (default) |
+| `--primary-700` | *(computed)* | Hover state for primary CTA |
+| `--primary-800` | *(computed)* | Pressed/active state |
+| `--primary-900` | *(computed)* | Deep brand fills |
+| `--primary-950` | *(computed)* | Near-deep brand color |
+
+---
+
+## Deep scale
+
+Derived from `{{palette.deep}}` (deep/dark brand color).
+
+| Token | Value | Usage |
+|---|---|---|
+| `--deep-50` | *(computed)* | Near-white, hero section text on dark bg |
+| `--deep-100` | *(computed)* | Off-white surfaces in light mode |
+| `--deep-200` | *(computed)* | Subtle dark-tinted borders |
+| `--deep-300` | *(computed)* | Secondary text in dark contexts |
+| `--deep-400` | *(computed)* | Tertiary text |
+| `--deep-500` | *(computed)* | Mid-range, rarely used directly |
+| `--deep-600` | *(computed)* | Strong dark fills |
+| `--deep-700` | *(computed)* | Sidebar, nav backgrounds |
+| `--deep-800` | *(computed)* | Card surfaces in dark mode |
+| `--deep-900` | `{{palette.deep}}` | Base deep color — hero bg, primary headings |
+| `--deep-950` | *(computed)* | Near-black — body bg in dark mode |
+
+---
+
+## Gray scale
+
+{{#if (eq palette.gray_tint "cool")}}Tinted with primary hue (cool blue-gray).{{/if}}
+{{#if (eq palette.gray_tint "warm")}}Tinted with warm beige hue.{{/if}}
+{{#if (eq palette.gray_tint "neutral")}}True neutral gray (no tint).{{/if}}
+
+| Token | Usage |
+|---|---|
+| `--gray-50` | Subtlest background, table row hover |
+| `--gray-100` | Card surfaces, input backgrounds |
+| `--gray-200` | Default border color |
+| `--gray-300` | Strong borders, dividers |
+| `--gray-400` | Placeholder text, disabled text |
+| `--gray-500` | Tertiary text |
+| `--gray-600` | Secondary text |
+| `--gray-700` | Primary text (light mode) |
+| `--gray-800` | Strong headings |
+| `--gray-900` | Maximum contrast text |
+| `--gray-950` | Near-black |
+
+---
+
+## Status colors
+
+| Token | Value | Usage |
+|---|---|---|
+| `--success` | `{{palette.success}}` | Success states, positive indicators |
+| `--warning` | `{{palette.warning}}` | Warning states, caution indicators |
+| `--error` | `{{palette.error}}` | Error states, destructive actions |
+| `--info` | `{{palette.info}}` | Informational states, neutral alerts |
+
+---
+
+## Typography
+
+| Token | Value | Usage |
+|---|---|---|
+| `--font-body` | `"{{typography.body}}", system-ui, sans-serif` | Body text, labels, UI text |
+| `--font-display` | `"{{typography.display}}", system-ui, sans-serif` | Headings, display text |
+| `--font-mono` | `"{{typography.mono}}", monospace` | Code blocks, data, monospace UI |
+
+**Type scale density:** `{{typography.scale}}`
+**Heading letter spacing:** `{{typography.letter_spacing_headings}}`
+
+---
+
+*Viewer: [`/tokens/primitive`](/tokens/primitive)*
+*Source: `app/globals.css` — primitive `:root` block*

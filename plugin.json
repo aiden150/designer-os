@@ -1,0 +1,102 @@
+{
+  "$schema": "https://claude.ai/schemas/plugin/v1",
+  "name": "designer-os",
+  "version": "1.0.0",
+  "description": "Turn a brand book into a production design system. Validates a structured YAML brand book, derives a three-layer token system, scaffolds a Next.js + Shadcn UI project, and installs an inspect-only QA harness.",
+  "author": "aiden150",
+  "repository": "https://github.com/aiden150/designer-os",
+  "license": "MIT",
+
+  "skills": [
+    {
+      "name": "design-from-brand",
+      "description": "Primary scaffold skill. Takes a brand-book YAML file, validates it against the schema, derives color scales and tokens, scaffolds the full Next.js project, generates documentation, installs the QA harness, and deploys to Vercel.",
+      "file": "skills/design-from-brand.md"
+    },
+    {
+      "name": "feature-build",
+      "description": "Per-feature iteration skill. Use after initial scaffold to add pages, components, or patterns. Delegates to the design-agent, enforces token rules, runs tsc, deploys, and hands off with a live URL.",
+      "file": "skills/feature-build.md"
+    }
+  ],
+
+  "agents": [
+    {
+      "name": "design-agent",
+      "description": "Builds product features following the brand's design system rules. Reads AGENTS.md, follows token and component constraints, runs tsc before declaring done, and deploys via Vercel.",
+      "file": "agents/design-agent.md"
+    },
+    {
+      "name": "qa-orchestrator",
+      "description": "Full QA sweep: runs code-scanner + token-auditor in parallel, gates on build, then runs visual-diff + a11y-checker in parallel. Aggregates findings into a structured JSON report.",
+      "file": "agents/qa-orchestrator.md"
+    },
+    {
+      "name": "code-scanner",
+      "description": "Static analysis only. Finds hardcoded hex colors, raw pixel values, and non-token patterns in component code. Read-only.",
+      "file": "agents/code-scanner.md"
+    },
+    {
+      "name": "token-auditor",
+      "description": "Verifies that every token in globals.css is documented in docs/ and visible in a token viewer page. Flags drift between the three locations. Read-only.",
+      "file": "agents/token-auditor.md"
+    },
+    {
+      "name": "visual-diff",
+      "description": "Captures Playwright screenshots and runs pixelmatch against the committed baseline in screenshots/. Reports routes where the diff exceeds 0.5% of pixels. Read-only.",
+      "file": "agents/visual-diff.md"
+    },
+    {
+      "name": "a11y-checker",
+      "description": "Runs axe-core via Playwright against every captured route. Reports color contrast, focus indicators, keyboard navigation, ARIA labels, and image alternatives. Read-only.",
+      "file": "agents/a11y-checker.md"
+    }
+  ],
+
+  "hooks": [
+    {
+      "name": "check-design-tokens",
+      "event": "PostToolUse",
+      "tools": ["Write", "Edit"],
+      "file": "hooks/check-design-tokens.mjs",
+      "description": "Warns when hardcoded hex, rgb(), or Tailwind color defaults are written to component files."
+    },
+    {
+      "name": "check-spacing",
+      "event": "PostToolUse",
+      "tools": ["Write", "Edit"],
+      "file": "hooks/check-spacing.mjs",
+      "description": "Warns when raw pixel values are written outside globals.css."
+    },
+    {
+      "name": "check-completeness",
+      "event": "PostToolUse",
+      "tools": ["Write", "Edit"],
+      "file": "hooks/check-completeness.mjs",
+      "description": "Warns when a new component file is created without a sibling story or test file."
+    },
+    {
+      "name": "protect-files",
+      "event": "PreToolUse",
+      "tools": ["Write", "Edit", "Delete"],
+      "file": "hooks/protect-files.mjs",
+      "description": "Blocks writes to .env files, lockfiles, and generated CSS. Hard block — not a warning."
+    }
+  ],
+
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(git *)",
+      "Bash(npx vercel *)"
+    ],
+    "deny": [
+      "Read(.env*)",
+      "Write(.env*)",
+      "Write(package-lock.json)",
+      "Write(*_generated.css)"
+    ]
+  }
+}

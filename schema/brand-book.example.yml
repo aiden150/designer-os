@@ -1,0 +1,102 @@
+# ──────────────────────────────────────────────────────────────────────────
+# Designer OS — Brand Book (fully filled-in example)
+#
+# This example represents a fictional B2B SaaS called "Meridian" —
+# a financial analytics platform for institutional investors.
+#
+# Use this as a reference when filling in brand-book.template.yml.
+# Run: /skill design-from-brand meridian.yml
+# ──────────────────────────────────────────────────────────────────────────
+
+brand:
+  name:        "Meridian"
+  tagline:     "Portfolio intelligence for institutional investors."
+  description: "Meridian gives portfolio managers and analysts a single workspace to monitor positions, model scenarios, and share structured research — without leaving the browser."
+  mission:     "To make institutional-grade analytics accessible to every portfolio manager, not just those with a Bloomberg terminal."
+  domain:      "meridian.finance"
+  logo:
+    svg:  "./assets/meridian-logo.svg"
+    mark: "M"
+
+palette:
+  primary:   "#0066FF"   # electric blue — CTAs, links, active states
+  deep:      "#0A0F1E"   # near-black navy — hero bg, primary headings
+  success:   "#10b981"
+  warning:   "#f59e0b"
+  error:     "#ef4444"
+  info:      "#3b82f6"
+  gray_tint: "cool"      # blue-tinted grays to stay on-brand
+
+typography:
+  body:    "Inter"
+  display: "Inter"
+  mono:    "JetBrains Mono"
+  scale:   "compact"                   # dense UI — this is a data product
+  letter_spacing_headings: "tight"     # institutional feel
+
+voice:
+  audience: "Institutional investors and portfolio managers"
+  tone:     [confident, technical, calm, formal]
+  voice_of: "Bloomberg Terminal meets Stripe docs"
+  forbid:
+    - "exclamation points"
+    - "we believe…"
+    - "revolutionary"
+    - "game-changing"
+    - emoji used as icons
+    - passive voice
+  examples:
+    good:
+      - "Your portfolio is 12% overweight technology. Here's the attribution."
+      - "Scenario analysis complete. Tail risk increased by 0.8σ under the stress test."
+      - "Configure alert thresholds in Settings → Notifications."
+    bad:
+      - "We're excited to share this amazing new feature! 🎉"
+      - "Revolutionize the way you think about investing!"
+      - "We believe every investor deserves better tools."
+
+product:
+  type:     "b2b-saas"
+  surfaces: [marketing, auth, onboarding, product-app, admin]
+  roles:    [analyst, portfolio-manager, admin]
+  key_routes:
+    - path: "/"
+      name: "Home"
+      description: "Marketing homepage — hero, features, social proof, pricing CTA"
+      shell: site
+    - path: "/pricing"
+      name: "Pricing"
+      description: "Plan tiers for individual analysts, teams, and enterprise"
+      shell: site
+    - path: "/dashboard"
+      name: "Dashboard"
+      description: "Portfolio overview — positions, P&L, top movers"
+      shell: app
+    - path: "/portfolio/:id"
+      name: "Portfolio"
+      description: "Single portfolio drilldown — holdings, scenarios, attribution"
+      shell: app
+    - path: "/research"
+      name: "Research"
+      description: "Structured notes and reports linked to positions"
+      shell: app
+    - path: "/alerts"
+      name: "Alerts"
+      description: "Threshold-based notifications on positions and risk metrics"
+      shell: app
+    - path: "/admin"
+      name: "Admin"
+      description: "Seat management, SSO config, audit log"
+      shell: app
+
+deploy:
+  vercel_project: "meridian-finance"
+  domain:         "meridian.finance"
+
+references:
+  - url: "https://stripe.com/docs"
+    why: "Information density + technical prose style. Code blocks, clear hierarchy."
+  - url: "https://linear.app"
+    why: "Keyboard-first app shell. Dense sidebar + main content layout."
+  - url: "https://bloomberg.com/terminal"
+    why: "Data-dense tables, muted palette with high-contrast accent, no decorative chrome."

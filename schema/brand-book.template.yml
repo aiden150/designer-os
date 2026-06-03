@@ -1,0 +1,63 @@
+# ──────────────────────────────────────────────────────────────────────────
+# Designer OS — Brand Book (template)
+#
+# Fill in this file with your brand's identity, then run:
+#   /skill design-from-brand my-brand.yml
+#
+# The skill validates this against schema/brand-book.schema.yml.
+# Missing required fields will halt the scaffold with a clear error.
+# ──────────────────────────────────────────────────────────────────────────
+
+brand:
+  name:        ""                # REQUIRED · e.g. "Acme"
+  tagline:     ""                # REQUIRED · e.g. "The fastest way to ship X."
+  description: ""                # REQUIRED · 1-2 sentence company description
+  mission:     ""                # optional · longer mission statement
+  domain:      ""                # optional · e.g. "acme.com"
+  logo:
+    svg:  ""                      # optional · path to SVG, e.g. "./assets/logo.svg"
+    png:  ""                      # optional
+    mark: ""                      # optional · single glyph used as textual mark, e.g. "✦"
+
+palette:
+  primary:   "#7C3AED"            # REQUIRED · brand accent (CTAs, links, fills)
+  deep:      "#1E1B4B"            # REQUIRED · deep brand color (hero bg, headings)
+  success:   "#10b981"            # optional · defaults to green
+  warning:   "#f59e0b"            # optional · defaults to amber
+  error:     "#ef4444"            # optional · defaults to red
+  info:      "#3b82f6"            # optional · defaults to blue
+  gray_tint: "neutral"            # optional · cool | warm | neutral
+
+typography:
+  body:    "Inter"                # REQUIRED · Google Fonts or system font name
+  display: ""                     # optional · defaults to `body` if empty
+  mono:    "JetBrains Mono"       # optional
+  scale:   "default"              # optional · compact | default | generous
+  letter_spacing_headings: "tight"  # optional · tight | default | loose
+
+voice:
+  audience: ""                    # REQUIRED · primary audience
+  tone:     [confident]           # REQUIRED · 2-4 from: confident, technical, calm, friendly, playful, urgent, formal, casual, premium, approachable
+  voice_of: ""                    # optional · "Bloomberg Terminal", "Stripe docs", …
+  forbid:   []                    # optional · e.g. ["exclamation points", "hype words", "emoji as icons"]
+  examples:
+    good: []
+    bad:  []
+
+product:
+  type:     "b2b-saas"            # REQUIRED · b2b-saas | marketplace | consumer-app | content-site | internal-tool | dashboard
+  surfaces: [marketing, auth, product-app]   # REQUIRED · which surfaces to scaffold
+  roles:    [customer, admin]     # optional · user roles
+  key_routes:                     # optional · custom routes beyond defaults
+    - path: "/pricing"
+      name: "Pricing"
+      description: "Plan tiers and CTAs"
+      shell: site
+
+deploy:
+  vercel_project: ""              # optional · Vercel project slug
+  domain:         ""              # optional · production domain
+
+references:                       # optional · sites whose patterns to study
+  - url: "https://example.com"
+    why: "Hero layout we want to borrow"

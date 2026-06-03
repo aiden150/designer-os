@@ -1,0 +1,51 @@
+# {{brand.name}} — Design System
+
+> {{brand.tagline}}
+
+{{brand.description}}
+
+---
+
+## What's in this docs folder
+
+| File | What it covers |
+|---|---|
+| `PRINCIPLES.md` | The ten principles the design-agent follows |
+| `DESIGN-SYSTEM.md` | Three-layer token architecture explained |
+| `TOKENS-PRIMITIVE.md` | Raw color scales (never reference in components) |
+| `TOKENS-SEMANTIC.md` | Role-based semantic tokens (use these in components) |
+| `TOKENS-MOBILE.md` | Mobile-specific scale adjustments |
+| `COMPONENTS.md` | Shadcn component usage rules |
+| `UX-PATTERNS.md` | Shell conventions, drawer patterns, empty states |
+| `UX-FLOWS.md` | Full route map across all surfaces |
+| `BUILD-PROCESS.md` | How to build and iterate on features |
+| `DEPLOY.md` | Vercel deployment + QA automation |
+| `QA.md` | Pass criteria for design QA |
+| `JOURNAL.md` | Build narrative — what was built and why |
+
+---
+
+## Quick reference
+
+**Brand accent:** `var(--color-interactive-primary)`
+**Primary text:** `var(--color-text-primary)`
+**Base background:** `var(--color-bg-base)`
+**Body font:** `var(--font-body)`
+**Display font:** `var(--font-display)`
+
+**Surfaces:** {{product.surfaces}}
+**Product type:** {{product.type}}
+
+---
+
+## Token viewers
+
+- [`/tokens/primitive`](/tokens/primitive) — raw color scales
+- [`/tokens/semantic`](/tokens/semantic) — semantic role bindings
+- [`/tokens/mobile`](/tokens/mobile) — mobile scale
+
+---
+
+## Rules for the design-agent
+
+See `AGENTS.md` at the project root (or `./../AGENTS.md`). That file is the source of truth for token rules, component constraints, and agent delegation. The agent reads it before every session.

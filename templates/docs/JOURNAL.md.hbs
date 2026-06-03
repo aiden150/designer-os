@@ -1,0 +1,37 @@
+# {{brand.name}} — Build Journal
+
+> A running narrative of what was built and why. The design-agent appends an entry after each feature.
+
+---
+
+## Initial scaffold — {{scaffoldDate}}
+
+**Designer OS** scaffolded **{{brand.name}}** from brand book.
+
+**Brand:** {{brand.name}} — {{brand.tagline}}
+
+**Palette:**
+- Primary: `{{palette.primary}}`
+- Deep: `{{palette.deep}}`
+- Gray tint: `{{palette.gray_tint}}`
+
+**Typography:** {{typography.body}} (body) / {{typography.display}} (display)
+
+**Surfaces scaffolded:** {{product.surfaces}}
+
+**What was created:**
+- Three-layer token system in `app/globals.css`
+- Next.js + Shadcn UI project scaffold
+- Token viewer pages (`/tokens/primitive`, `/tokens/semantic`, `/tokens/mobile`)
+- Shadcn component showcase (`/components`)
+- Surface shells: {{product.surfaces}}
+- 13 documentation files in `docs/`
+- `.claude/` QA harness (6 agents + 4 hooks)
+- Screenshot baseline
+- GitHub Action for design QA
+- First deploy to Vercel
+
+---
+
+*Each subsequent entry is added by the design-agent after completing a feature.*
+*Format: date, feature name, what was built, why, live URL.*

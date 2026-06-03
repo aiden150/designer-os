@@ -1,0 +1,82 @@
+# {{brand.name}} — Design System Rules
+
+> These rules are **enforced by hooks** under `.claude/hooks/`. A pre-save hook will warn (or block) on violations.
+
+## Token rules (no hardcoding)
+
+- **Colors:** Use only `var(--color-*)` (semantic) or `var(--primary-*|deep-*|gray-*)` (primitive). **Never** raw hex like `#000000` in component code.
+- **Spacing:** Use Tailwind utilities (`p-4`, `gap-3`, `mt-8`). **Never** raw pixel values like `padding: 17px`.
+- **Typography:** Use the fluid utility classes (`.text-display-xl`, `.text-display`, `.text-h1`, `.text-h2`, `.text-h3`) for headings, Tailwind defaults (`text-sm`, `text-base`, `text-lg`) for body. **Never** raw `text-[28px]` ladders.
+- **Radius:** Tailwind utilities (`rounded-full`, `rounded-2xl`). No `border-radius: 17px`.
+- **Shadows:** Tailwind utilities (`shadow-md`, `shadow-xl`) or `var(--shadow-*)`.
+
+## Allowed exceptions
+
+These are legitimately raw values (the hook ignores them):
+
+- **`app/globals.css`** — primitive `:root` block. Hex defined here, referenced everywhere else.
+- **Motion durations:** `0.28s`, `0.7s`, `[0.22, 1, 0.36, 1]` ease arrays — timing constants, not style tokens.
+- **Z-index integers:** `z-30`, `z-50` — Tailwind utility; raw integers are also allowed in inline `style={{ zIndex: 60 }}`.
+- **Aspect ratios:** `"16 / 10"`, `"4 / 3"` — geometry, not style.
+- **`scripts/**`** — utility scripts, not product code.
+- **`docs/**`** — documentation examples in fenced code blocks.
+
+## Icons
+
+- **Never use colored emojis** as icons (e.g. 💬 🤝 🎓 📣).
+- **Always use lucide-react** (`import { IconName } from "lucide-react"`).
+- Icon style: `strokeWidth={1.5}` (1.5–1.8 range), color via `style={{ color: "var(--color-text-*)" }}`. **Never hardcode hex on icons.**
+
+## Component rules
+
+- **Buttons** → Shadcn `<Button>` only. No raw `<button>` for interactive triggers.
+- **Tables** → Shadcn `<Table>` only. No raw `<table>`.
+- **Cards** → Shadcn `<Card>` family. No raw rounded divs masquerading as cards.
+- **Inputs** → Shadcn `<Input>` + `<Label>`. No raw `<input>`.
+- **Tabs** → Shadcn `<Tabs>` family.
+- **Switches** → Shadcn `<Switch>`.
+- **Badges** → Shadcn `<Badge>`.
+
+## Dark mode
+
+Light is `:root`. Dark is `.dark` class on `<html>`. Components must **never** branch on theme — read CSS variables and let the cascade do it.
+
+```tsx
+// ❌ Don't
+{isDark ? "#fff" : "#000"}
+
+// ✅ Do
+style={{ color: "var(--color-text-primary)" }}
+```
+
+## Voice & copy
+
+- **Audience:** {{voice.audience}}
+- **Tone:** {{voice.tone}}
+{{#if voice.voice_of}}- **Reference voice:** {{voice.voice_of}}{{/if}}
+{{#if voice.forbid}}- **Never use:** {{voice.forbid}}{{/if}}
+
+---
+
+# Agent delegation
+
+This project ships specialized agents under `.claude/agents/`. **Use them.**
+
+## When to delegate
+
+| Task | Agent | Notes |
+|---|---|---|
+| **Add a page, component, token, or pattern** | **`design-agent`** | Encodes all design system rules. Use for almost any product-building task. |
+| Pre-commit / pre-deploy full QA sweep | `qa-orchestrator` | Runs the next four agents in sequence + aggregates findings |
+| Find hardcoded values in code | `code-scanner` | Read-only static analysis |
+| Verify tokens stay in sync with docs + viewers | `token-auditor` | Read-only consistency check |
+| Compare new screenshots vs committed baseline | `visual-diff` | Pixelmatch via `screenshots/` git HEAD |
+| WCAG 2.1 AA accessibility audit | `a11y-checker` | axe-core via Playwright |
+
+## How to invoke
+
+```
+/agents design-agent           # Build a feature
+/agents qa-orchestrator        # Full QA sweep before merge
+/agents code-scanner           # Just check for hardcoded values
+```
