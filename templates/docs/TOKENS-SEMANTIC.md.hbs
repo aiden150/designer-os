@@ -1,0 +1,111 @@
+# Semantic Tokens — {{brand.name}}
+
+> Role-based color bindings. **These are the only tokens component code may reference.**
+> All semantic tokens have both a light (`:root`) and dark (`.dark`) value.
+
+---
+
+## Backgrounds
+
+| Token | Light | Dark | Usage |
+|---|---|---|---|
+| `--color-bg-default` | `var(--gray-0)` | `var(--deep-950)` | Page background |
+| `--color-bg-subtle` | `var(--gray-50)` | `var(--deep-900)` | Slightly elevated background (table rows, sidebar) |
+| `--color-bg-ui` | `var(--gray-100)` | `var(--deep-800)` | UI surface (input backgrounds, card fills) |
+| `--color-bg-brand` | `var(--primary-500)` | `var(--primary-500)` | Brand-filled CTA backgrounds |
+| `--color-bg-brand-muted` | `var(--primary-50)` | `12% primary mix` | Subtle brand tint (tag backgrounds, active items) |
+
+---
+
+## Text
+
+| Token | Light | Dark | Usage |
+|---|---|---|---|
+| `--color-text-primary` | `var(--deep-900)` | `var(--gray-50)` | Primary body text, headings |
+| `--color-text-secondary` | `var(--gray-600)` | `var(--gray-400)` | Supporting text, metadata |
+| `--color-text-muted` | `var(--gray-500)` | `var(--gray-500)` | Placeholder text, tertiary labels |
+| `--color-text-disabled` | `var(--gray-400)` | `var(--gray-700)` | Disabled state labels |
+| `--color-text-brand` | `var(--primary-700)` | `var(--primary-400)` | Brand-colored text, active nav items |
+| `--color-text-on-brand` | `var(--gray-0)` | `var(--deep-950)` | Text on brand-colored backgrounds |
+
+**Contrast requirements:**
+- `--color-text-primary` on `--color-bg-default`: ≥ 7:1 (AAA)
+- `--color-text-secondary` on `--color-bg-default`: ≥ 4.5:1 (AA)
+- `--color-text-muted` on `--color-bg-default`: ≥ 4.5:1 (AA) — check both themes
+
+---
+
+## Borders
+
+| Token | Light | Dark | Usage |
+|---|---|---|---|
+| `--color-border-muted` | `var(--gray-100)` | `6% white mix` | Subtle dividers, card inner borders |
+| `--color-border-default` | `var(--gray-200)` | `10% white mix` | Default input borders, card outlines |
+| `--color-border-strong` | `var(--gray-300)` | `18% white mix` | Emphasized borders, separators |
+| `--color-border-brand` | `var(--primary-500)` | `var(--primary-500)` | Focus rings, active selection borders |
+
+---
+
+## Interactive
+
+| Token | Light | Dark | Usage |
+|---|---|---|---|
+| `--color-interactive-primary` | `var(--primary-600)` | `var(--primary-500)` | Primary CTA background |
+| `--color-interactive-primary-hover` | `var(--primary-700)` | `var(--primary-400)` | CTA hover state |
+| `--color-interactive-primary-text` | `var(--gray-0)` | `var(--gray-0)` | Text on primary CTA |
+
+---
+
+## Status
+
+Each status has three semantic tokens: `bg`, `text`, `border`.
+
+### Success
+| Token | Light | Dark |
+|---|---|---|
+| `--color-status-success-bg` | `var(--success-50)` | `14% success mix` |
+| `--color-status-success-text` | `var(--success-700)` | `80% success + white` |
+| `--color-status-success-border` | `30% success mix` | `28% success mix` |
+
+### Warning
+| Token | Light | Dark |
+|---|---|---|
+| `--color-status-warning-bg` | `var(--warning-50)` | `14% warning mix` |
+| `--color-status-warning-text` | `var(--warning-700)` | `80% warning + white` |
+| `--color-status-warning-border` | `30% warning mix` | `28% warning mix` |
+
+### Error
+| Token | Light | Dark |
+|---|---|---|
+| `--color-status-error-bg` | `var(--error-50)` | `14% error mix` |
+| `--color-status-error-text` | `var(--error-700)` | `80% error + white` |
+| `--color-status-error-border` | `30% error mix` | `28% error mix` |
+
+### Info
+| Token | Light | Dark |
+|---|---|---|
+| `--color-status-info-bg` | `var(--info-50)` | `14% info mix` |
+| `--color-status-info-text` | `var(--info-700)` | `80% info + white` |
+| `--color-status-info-border` | `30% info mix` | `28% info mix` |
+
+---
+
+## Usage rules
+
+```tsx
+// ✅ Reference semantic tokens in components
+style={{ color: "var(--color-text-primary)" }}
+style={{ background: "var(--color-bg-subtle)" }}
+style={{ borderColor: "var(--color-border-default)" }}
+
+// ❌ Never reference primitives in components
+style={{ color: "var(--primary-700)" }}
+style={{ background: "var(--gray-50)" }}
+```
+
+The `code-scanner` agent enforces this. Any `var(--primary-*)`, `var(--deep-*)`, or `var(--gray-*)` reference in a component file will be flagged.
+
+---
+
+*Viewer: [`/tokens/semantic`](/tokens/semantic)*
+*Source: `app/globals.css` — `:root` and `.dark` blocks*

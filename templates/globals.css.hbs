@@ -1,0 +1,392 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ════════════════════════════════════════════════════════
+   PRIMITIVE TOKENS — {{brand.name}}
+   Raw scale values — no semantic meaning, no brand context.
+   Never reference these directly in component code.
+   Use --color-* semantic tokens instead.
+   ════════════════════════════════════════════════════════ */
+:root {
+  /* ── Primary scale (derived from {{palette.primary}}) ── */
+  --primary-50:  {{computed.primary_50}};
+  --primary-100: {{computed.primary_100}};
+  --primary-200: {{computed.primary_200}};
+  --primary-300: {{computed.primary_300}};
+  --primary-400: {{computed.primary_400}};
+  --primary-500: {{palette.primary}};
+  --primary-600: {{computed.primary_600}};
+  --primary-700: {{computed.primary_700}};
+  --primary-800: {{computed.primary_800}};
+  --primary-900: {{computed.primary_900}};
+  --primary-950: {{computed.primary_950}};
+
+  /* ── Deep scale (derived from {{palette.deep}}) ── */
+  --deep-50:  {{computed.deep_50}};
+  --deep-100: {{computed.deep_100}};
+  --deep-200: {{computed.deep_200}};
+  --deep-300: {{computed.deep_300}};
+  --deep-400: {{computed.deep_400}};
+  --deep-500: {{computed.deep_500}};
+  --deep-600: {{computed.deep_600}};
+  --deep-700: {{computed.deep_700}};
+  --deep-800: {{computed.deep_800}};
+  --deep-900: {{palette.deep}};
+  --deep-950: {{computed.deep_950}};
+
+  /* ── Gray scale ({{palette.gray_tint}} tint) ── */
+  --gray-0:    #ffffff;
+  --gray-50:   {{computed.gray_50}};
+  --gray-100:  {{computed.gray_100}};
+  --gray-200:  {{computed.gray_200}};
+  --gray-300:  {{computed.gray_300}};
+  --gray-400:  {{computed.gray_400}};
+  --gray-500:  {{computed.gray_500}};
+  --gray-600:  {{computed.gray_600}};
+  --gray-700:  {{computed.gray_700}};
+  --gray-800:  {{computed.gray_800}};
+  --gray-900:  {{computed.gray_900}};
+  --gray-950:  {{computed.gray_950}};
+
+  /* ── Status colors ── */
+  --success-50:  {{computed.success_50}};
+  --success-500: {{palette.success}};
+  --success-700: {{computed.success_700}};
+
+  --warning-50:  {{computed.warning_50}};
+  --warning-500: {{palette.warning}};
+  --warning-700: {{computed.warning_700}};
+
+  --error-50:    {{computed.error_50}};
+  --error-500:   {{palette.error}};
+  --error-700:   {{computed.error_700}};
+
+  --info-50:     {{computed.info_50}};
+  --info-500:    {{palette.info}};
+  --info-700:    {{computed.info_700}};
+
+  /* ── Typography ── */
+  --font-sans: "{{typography.body}}", system-ui, -apple-system, sans-serif;
+  --font-display: "{{typography.display}}", system-ui, -apple-system, sans-serif;
+  --font-mono: "{{typography.mono}}", ui-monospace, monospace;
+
+  /* ── Fluid type scale ({{typography.scale}}) ── */
+  {{#if (eq typography.scale "compact")}}
+  --type-display-xl: clamp(1.75rem, 2.4rem + 1.6vw, 3.5rem);   /* 28 → 56px */
+  --type-display:    clamp(1.5rem,  1.2rem + 1.6vw, 2.25rem);   /* 24 → 36px */
+  --type-h1:         clamp(1.25rem, 1rem + 1.2vw,   1.875rem);  /* 20 → 30px */
+  --type-h2:         clamp(1.125rem,1rem + 0.8vw,   1.5rem);    /* 18 → 24px */
+  --type-h3:         clamp(1rem,    0.95rem + 0.4vw, 1.25rem);  /* 16 → 20px */
+  {{/if}}
+  {{#if (eq typography.scale "default")}}
+  --type-display-xl: clamp(2.25rem, 3.2rem + 2vw,   5rem);      /* 36 → 80px */
+  --type-display:    clamp(1.75rem, 1.4rem + 2.4vw,  2.75rem);  /* 28 → 44px */
+  --type-h1:         clamp(1.5rem,  1.2rem + 1.6vw,  2.25rem);  /* 24 → 36px */
+  --type-h2:         clamp(1.25rem, 1.05rem + 1.2vw, 1.75rem);  /* 20 → 28px */
+  --type-h3:         clamp(1.125rem,1rem + 0.6vw,    1.375rem); /* 18 → 22px */
+  {{/if}}
+  {{#if (eq typography.scale "generous")}}
+  --type-display-xl: clamp(3rem,    4rem + 2.5vw,    7rem);      /* 48 → 112px */
+  --type-display:    clamp(2.25rem, 1.8rem + 2.8vw,  3.5rem);   /* 36 → 56px */
+  --type-h1:         clamp(1.875rem,1.5rem + 2vw,    2.75rem);  /* 30 → 44px */
+  --type-h2:         clamp(1.5rem,  1.25rem + 1.6vw, 2.25rem);  /* 24 → 36px */
+  --type-h3:         clamp(1.25rem, 1.1rem + 0.8vw,  1.625rem); /* 20 → 26px */
+  {{/if}}
+  --type-h4:       1rem;
+  --type-body:     0.875rem;
+  --type-caption:  0.75rem;
+
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+
+  --leading-tight:   1.25;
+  --leading-snug:    1.375;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.625;
+
+  {{#if (eq typography.letter_spacing_headings "tight")}}
+  --tracking-display: -0.04em;
+  --tracking-heading: -0.025em;
+  {{/if}}
+  {{#if (eq typography.letter_spacing_headings "default")}}
+  --tracking-display: -0.02em;
+  --tracking-heading: -0.01em;
+  {{/if}}
+  {{#if (eq typography.letter_spacing_headings "loose")}}
+  --tracking-display: 0em;
+  --tracking-heading: 0.01em;
+  {{/if}}
+
+  /* ── Spacing ── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* ── Border Radius ── */
+  --radius-none: 0px;
+  --radius-xs:   2px;
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   8px;
+  --radius-xl:   12px;
+  --radius-2xl:  16px;
+  --radius-3xl:  24px;
+  --radius-full: 9999px;
+
+  /* ── Shadow ── */
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / .05);
+  --shadow-sm: 0 1px 3px rgb(0 0 0 / .07), 0 1px 2px -1px rgb(0 0 0 / .04);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / .07), 0 2px 4px -2px rgb(0 0 0 / .05);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / .07), 0 4px 6px -4px rgb(0 0 0 / .04);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / .08), 0 8px 10px -6px rgb(0 0 0 / .04);
+  --shadow-glow: 0 0 0 3px color-mix(in srgb, var(--primary-500) 25%, transparent);
+}
+
+/* ════════════════════════════════════════════════════════
+   SEMANTIC TOKENS — LIGHT (default)
+   Map primitives to roles. Components only reference these.
+   ════════════════════════════════════════════════════════ */
+:root {
+  /* Backgrounds */
+  --color-bg-default:     var(--gray-0);
+  --color-bg-subtle:      var(--gray-50);
+  --color-bg-ui:          var(--gray-100);
+  --color-bg-brand:       var(--primary-500);
+  --color-bg-brand-muted: var(--primary-50);
+
+  /* Text */
+  --color-text-primary:   var(--deep-900);
+  --color-text-secondary: var(--gray-600);
+  --color-text-muted:     var(--gray-500);
+  --color-text-disabled:  var(--gray-400);
+  --color-text-brand:     var(--primary-700);
+  --color-text-on-brand:  var(--gray-0);
+
+  /* Borders */
+  --color-border-muted:   var(--gray-100);
+  --color-border-default: var(--gray-200);
+  --color-border-strong:  var(--gray-300);
+  --color-border-brand:   var(--primary-500);
+
+  /* Interactive */
+  --color-interactive-primary:       var(--primary-600);
+  --color-interactive-primary-hover: var(--primary-700);
+  --color-interactive-primary-text:  var(--gray-0);
+
+  /* Status — success */
+  --color-status-success-bg:     var(--success-50);
+  --color-status-success-text:   var(--success-700);
+  --color-status-success-border: color-mix(in srgb, var(--success-500) 30%, transparent);
+
+  /* Status — warning */
+  --color-status-warning-bg:     var(--warning-50);
+  --color-status-warning-text:   var(--warning-700);
+  --color-status-warning-border: color-mix(in srgb, var(--warning-500) 30%, transparent);
+
+  /* Status — error */
+  --color-status-error-bg:       var(--error-50);
+  --color-status-error-text:     var(--error-700);
+  --color-status-error-border:   color-mix(in srgb, var(--error-500) 30%, transparent);
+
+  /* Status — info */
+  --color-status-info-bg:        var(--info-50);
+  --color-status-info-text:      var(--info-700);
+  --color-status-info-border:    color-mix(in srgb, var(--info-500) 30%, transparent);
+
+  /* ── Shadcn variables (light) ── */
+  --background: oklch(1 0 0);
+  --foreground: {{computed.shadcn_foreground_light}};
+  --card: oklch(1 0 0);
+  --card-foreground: {{computed.shadcn_foreground_light}};
+  --popover: oklch(1 0 0);
+  --popover-foreground: {{computed.shadcn_foreground_light}};
+  --primary: {{computed.shadcn_primary_oklch}};
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.2 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.55 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.2 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.92 0 0);
+  --input: oklch(0.92 0 0);
+  --ring: {{computed.shadcn_primary_oklch}};
+  --radius: 0.5rem;
+}
+
+/* ════════════════════════════════════════════════════════
+   SEMANTIC TOKENS — DARK
+   All semantic tokens must have a .dark override.
+   ════════════════════════════════════════════════════════ */
+.dark {
+  /* Backgrounds */
+  --color-bg-default:     var(--deep-950);
+  --color-bg-subtle:      var(--deep-900);
+  --color-bg-ui:          var(--deep-800);
+  --color-bg-brand:       var(--primary-500);
+  --color-bg-brand-muted: color-mix(in srgb, var(--primary-500) 12%, transparent);
+
+  /* Text */
+  --color-text-primary:   var(--gray-50);
+  --color-text-secondary: var(--gray-400);
+  --color-text-muted:     var(--gray-500);
+  --color-text-disabled:  var(--gray-700);
+  --color-text-brand:     var(--primary-400);
+  --color-text-on-brand:  var(--deep-950);
+
+  /* Borders */
+  --color-border-muted:   color-mix(in srgb, var(--gray-0) 6%, transparent);
+  --color-border-default: color-mix(in srgb, var(--gray-0) 10%, transparent);
+  --color-border-strong:  color-mix(in srgb, var(--gray-0) 18%, transparent);
+  --color-border-brand:   var(--primary-500);
+
+  /* Interactive */
+  --color-interactive-primary:       var(--primary-500);
+  --color-interactive-primary-hover: var(--primary-400);
+  --color-interactive-primary-text:  var(--gray-0);
+
+  /* Status — success */
+  --color-status-success-bg:     color-mix(in srgb, var(--success-500) 14%, transparent);
+  --color-status-success-text:   color-mix(in srgb, var(--success-500) 80%, white);
+  --color-status-success-border: color-mix(in srgb, var(--success-500) 28%, transparent);
+
+  /* Status — warning */
+  --color-status-warning-bg:     color-mix(in srgb, var(--warning-500) 14%, transparent);
+  --color-status-warning-text:   color-mix(in srgb, var(--warning-500) 80%, white);
+  --color-status-warning-border: color-mix(in srgb, var(--warning-500) 28%, transparent);
+
+  /* Status — error */
+  --color-status-error-bg:       color-mix(in srgb, var(--error-500) 14%, transparent);
+  --color-status-error-text:     color-mix(in srgb, var(--error-500) 80%, white);
+  --color-status-error-border:   color-mix(in srgb, var(--error-500) 28%, transparent);
+
+  /* Status — info */
+  --color-status-info-bg:        color-mix(in srgb, var(--info-500) 14%, transparent);
+  --color-status-info-text:      color-mix(in srgb, var(--info-500) 80%, white);
+  --color-status-info-border:    color-mix(in srgb, var(--info-500) 28%, transparent);
+
+  /* ── Shadcn variables (dark) ── */
+  --background: {{computed.shadcn_background_dark_oklch}};
+  --foreground: oklch(0.97 0 0);
+  --card: {{computed.shadcn_card_dark_oklch}};
+  --card-foreground: oklch(0.97 0 0);
+  --popover: {{computed.shadcn_card_dark_oklch}};
+  --popover-foreground: oklch(0.97 0 0);
+  --primary: {{computed.shadcn_primary_oklch}};
+  --primary-foreground: oklch(0.09 0 0);
+  --secondary: oklch(0.18 0 0);
+  --secondary-foreground: oklch(0.97 0 0);
+  --muted: oklch(0.16 0 0);
+  --muted-foreground: oklch(0.60 0 0);
+  --accent: oklch(0.18 0 0);
+  --accent-foreground: oklch(0.97 0 0);
+  --destructive: oklch(0.65 0.20 25);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 10%);
+  --ring: {{computed.shadcn_primary_oklch}};
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    background-color: var(--color-bg-default);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* ── View Transition: theme ripple ── */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  z-index: 9999;
+  animation: vt-ripple 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+::view-transition-old(root) {
+  z-index: 1;
+}
+@keyframes vt-ripple {
+  from { clip-path: circle(0% at var(--vt-x, 50%) var(--vt-y, 50%)); }
+  to   { clip-path: circle(var(--vt-r, 150%) at var(--vt-x, 50%) var(--vt-y, 50%)); }
+}
+
+/* ── Fluid Typography utility classes ── */
+.text-display-xl {
+  font-size: var(--type-display-xl);
+  line-height: 1.05;
+  letter-spacing: var(--tracking-display);
+  font-weight: 600;
+}
+.text-display {
+  font-size: var(--type-display);
+  line-height: 1.1;
+  letter-spacing: var(--tracking-display);
+  font-weight: 600;
+}
+.text-h1 {
+  font-size: var(--type-h1);
+  line-height: 1.15;
+  letter-spacing: var(--tracking-heading);
+  font-weight: 600;
+}
+.text-h2 {
+  font-size: var(--type-h2);
+  line-height: 1.2;
+  letter-spacing: var(--tracking-heading);
+  font-weight: 600;
+}
+.text-h3 {
+  font-size: var(--type-h3);
+  line-height: 1.3;
+  letter-spacing: var(--tracking-heading);
+  font-weight: 600;
+}

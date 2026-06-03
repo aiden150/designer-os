@@ -50,7 +50,7 @@ For every CSS variable referenced in `docs/TOKENS-*.md` (e.g., `--teal-500`, `--
 
 ### Audit 2 — globals.css ↔ viewers
 
-For every primitive token in `globals.css` (any `--teal-*`, `--gray-*`, `--red-*`, `--amber-*`, `--green-*`, `--blue-*`, `--type-*`, `--radius-*`, `--shadow-*`):
+For every primitive token in `globals.css` (any `--primary-*`, `--deep-*`, `--gray-*`, `--success-*`, `--warning-*`, `--error-*`, `--info-*`, `--type-*`, `--radius-*`, `--shadow-*`, `--space-*`):
 
 - Confirm it is rendered in at least one of:
   - `app/tokens/primitive/page.tsx`
@@ -64,10 +64,10 @@ A token "rendered" means its name appears as a literal string in the viewer sour
 {
   "rule": "missing-from-viewer",
   "severity": "warn",
-  "token": "--teal-800",
+  "token": "--primary-800",
   "defined_in": "app/globals.css",
   "viewers_checked": ["app/tokens/primitive/page.tsx", "app/tokens/semantic/page.tsx", "app/tokens/mobile/page.tsx"],
-  "suggest": "Add --teal-800 to the primitive viewer scale rendering"
+  "suggest": "Add --primary-800 to the primitive viewer scale rendering"
 }
 ```
 
@@ -145,9 +145,11 @@ Use `Read` to inspect any suspicious section in context.
 - ❌ Do not run any side-effecting command.
 - ❌ Do not call other agents.
 - ✅ Distinguish primitive vs semantic by prefix:
-  - `--primary-*, --deep-*, --gray-*` = primitive (color scales derived from brand)
-  - `--type-*, --radius-*, --shadow-*, --space-*` = primitive (sizing)
-  - `--color-*` = semantic
+  - `--primary-*, --deep-*, --gray-*` = primitive color scales (brand-derived)
+  - `--success-*, --warning-*, --error-*, --info-*` = primitive status scales
+  - `--type-*, --radius-*, --shadow-*, --space-*` = primitive sizing/typography
+  - `--color-*` = semantic (these change per theme)
+  - `--font-*`, `--weight-*`, `--leading-*`, `--tracking-*` = typography primitives
 - ✅ Be precise. The auditor must not cry wolf on intentional token deletions (e.g., a primitive intentionally removed should not be flagged if no doc still references it).
 
 You are a quiet librarian. You catalog, cross-check, and report drift — nothing more.

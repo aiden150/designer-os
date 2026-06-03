@@ -65,91 +65,114 @@ Output: a structured map of all CSS custom property values. This feeds Phase 2.
 
 ### Phase 2 — Token scaffolding (three layers)
 
-Write `app/globals.css` with three distinct layers.
+Use the template at `templates/globals.css.hbs` as the structure. Fill in all `{{computed.*}}` placeholders with values from Phase 1.
 
-**Layer 1 — Primitive scales** (`:root` block, top)
+The three layers written to `app/globals.css`:
+
+**Layer 1 — Primitive scales** (`:root` block, top of file)
+
 ```css
-/* ── PRIMITIVE: Primary ── */
---primary-50:  <computed>;
---primary-100: <computed>;
-/* … through --primary-950 */
+/* ── Primary scale (11 stops, --primary-50 through --primary-950) ── */
+--primary-50:  <computed>;   /* near-white tint */
+…
+--primary-500: <palette.primary>;   /* the brand hex as provided */
+…
+--primary-950: <computed>;   /* near-deep dark */
 
-/* ── PRIMITIVE: Deep ── */
---deep-50:  <computed>;
-/* … through --deep-950 */
+/* ── Deep scale (11 stops, --deep-50 through --deep-950) ── */
+--deep-50:  <computed>;   /* near-white */
+…
+--deep-900: <palette.deep>;   /* the brand hex as provided */
+--deep-950: <computed>;   /* near-black */
 
-/* ── PRIMITIVE: Gray ── */
---gray-50:  <computed>;
-/* … through --gray-950 */
+/* ── Gray scale (--gray-0 through --gray-950) ── */
+--gray-0:   #ffffff;
+--gray-50:  <computed>;   /* tinted per palette.gray_tint */
+…
+--gray-950: <computed>;
 
-/* ── PRIMITIVE: Status ── */
---success: <value>;
---warning: <value>;
---error:   <value>;
---info:    <value>;
+/* ── Status scales (50, 500, 700 for each) ── */
+--success-50:  <computed>;
+--success-500: <palette.success>;
+--success-700: <computed>;
+/* … same for warning, error, info … */
+
+/* ── Typography ── */
+--font-sans:    "<typography.body>", system-ui, -apple-system, sans-serif;
+--font-display: "<typography.display>", system-ui, -apple-system, sans-serif;
+--font-mono:    "<typography.mono>", ui-monospace, monospace;
+
+/* Fluid type scale — values depend on typography.scale */
+--type-display-xl: clamp(…);   /* hero */
+--type-display:    clamp(…);   /* section hero */
+--type-h1:         clamp(…);   /* page title */
+--type-h2:         clamp(…);   /* section heading */
+--type-h3:         clamp(…);   /* card title */
+--type-h4:         1rem;
+--type-body:       0.875rem;
+--type-caption:    0.75rem;
+
+/* Letter spacing (depends on typography.letter_spacing_headings) */
+--tracking-display: <tight=-0.04em | default=-0.02em | loose=0em>;
+--tracking-heading: <tight=-0.025em | default=-0.01em | loose=0.01em>;
+
+/* Spacing, radius, shadow — always the same values */
+--space-1: 4px; … --space-24: 96px;
+--radius-none: 0px; … --radius-full: 9999px;
+--shadow-xs: …; … --shadow-glow: 0 0 0 3px color-mix(in srgb, var(--primary-500) 25%, transparent);
 ```
 
 **Layer 2 — Semantic roles** (`:root` light + `.dark` overrides)
-Map primitives to semantic roles so components never reference primitives directly:
+
+Naming convention matches the actual template exactly:
+
 ```css
-/* ── SEMANTIC: Text ── */
+/* Backgrounds */
+--color-bg-default:     var(--gray-0);
+--color-bg-subtle:      var(--gray-50);
+--color-bg-ui:          var(--gray-100);
+--color-bg-brand:       var(--primary-500);
+--color-bg-brand-muted: var(--primary-50);
+
+/* Text */
 --color-text-primary:   var(--deep-900);
 --color-text-secondary: var(--gray-600);
---color-text-tertiary:  var(--gray-400);
---color-text-brand:     var(--primary-600);
---color-text-inverse:   var(--deep-50);
---color-text-on-primary: white; /* or deep-900 if primary is light */
+--color-text-muted:     var(--gray-500);
+--color-text-disabled:  var(--gray-400);
+--color-text-brand:     var(--primary-700);
+--color-text-on-brand:  var(--gray-0);
 
-/* ── SEMANTIC: Backgrounds ── */
---color-bg-base:      white;
---color-bg-subtle:    var(--gray-50);
---color-bg-muted:     var(--gray-100);
---color-bg-emphasis:  var(--deep-900);
---color-bg-brand:     var(--primary-600);
---color-bg-brand-subtle: var(--primary-50);
-
-/* ── SEMANTIC: Borders ── */
+/* Borders */
+--color-border-muted:   var(--gray-100);
 --color-border-default: var(--gray-200);
 --color-border-strong:  var(--gray-300);
---color-border-brand:   var(--primary-400);
+--color-border-brand:   var(--primary-500);
 
-/* ── SEMANTIC: Interactive ── */
+/* Interactive */
 --color-interactive-primary:       var(--primary-600);
 --color-interactive-primary-hover: var(--primary-700);
---color-interactive-primary-text:  white;
+--color-interactive-primary-text:  var(--gray-0);
 
-/* ── SEMANTIC: Status ── */
---color-success: var(--success);
---color-warning: var(--warning);
---color-error:   var(--error);
---color-info:    var(--info);
+/* Status (bg, text, border for each: success, warning, error, info) */
+--color-status-success-bg:     var(--success-50);
+--color-status-success-text:   var(--success-700);
+--color-status-success-border: color-mix(in srgb, var(--success-500) 30%, transparent);
+/* … same pattern for warning, error, info … */
 ```
 
-`.dark` block — override all semantics for dark mode:
+`.dark` block — override every semantic token. See `templates/globals.css.hbs` for all overrides.
+
+**Layer 3 — Fluid typography utility classes** (at bottom of file)
+
 ```css
-.dark {
-  --color-text-primary:   var(--deep-50);
-  --color-text-secondary: var(--gray-400);
-  --color-bg-base:        var(--deep-950);
-  --color-bg-subtle:      var(--deep-900);
-  /* … all semantic overrides … */
-}
+.text-display-xl { font-size: var(--type-display-xl); letter-spacing: var(--tracking-display); … }
+.text-display    { font-size: var(--type-display);    letter-spacing: var(--tracking-display); … }
+.text-h1         { font-size: var(--type-h1);         letter-spacing: var(--tracking-heading); … }
+.text-h2         { font-size: var(--type-h2);         letter-spacing: var(--tracking-heading); … }
+.text-h3         { font-size: var(--type-h3);         letter-spacing: var(--tracking-heading); … }
 ```
 
-**Layer 3 — Typography**
-```css
-/* ── TYPOGRAPHY ── */
---font-body:    "<body font>", system-ui, sans-serif;
---font-display: "<display font>", system-ui, sans-serif;
---font-mono:    "<mono font>", monospace;
-
-/* Fluid type scale (scale: compact | default | generous) */
-/* compact:  clamp(0.75rem, …, 0.875rem) for sm, etc. */
-/* default:  clamp(0.875rem, …, 1rem) */
-/* generous: clamp(1rem, …, 1.125rem) */
-```
-
-**Also write `tailwind.config.ts`** — extend theme with `colors.primary`, `colors.deep`, `colors.gray`, `fontFamily.body`, `fontFamily.display`, `fontFamily.mono`.
+**Also write `tailwind.config.ts`** — extend theme with `colors.primary`, `colors.deep`, `colors.gray`, `fontFamily.sans`, `fontFamily.display`, `fontFamily.mono`.
 
 ---
 
@@ -270,7 +293,9 @@ Copy the harness files from the plugin into the project's `.claude/` directory:
 
 Generate `.claude/settings.json` wiring all four hooks to their events.
 
-Copy `scripts/qa-screenshots.mjs` from the plugin into the project.
+Generate `scripts/qa-screenshots.mjs` from `templates/scripts/qa-screenshots.mjs.hbs`, substituting all brand book variables. The generated script will have the correct routes from `product.surfaces` and `product.key_routes`.
+
+Also copy `hooks/_visual-diff.mjs` and `hooks/_a11y-runner.mjs` from the plugin into `.claude/hooks/` in the project.
 
 Copy `.github/workflows/design-qa.yml` from the plugin into the project.
 
